@@ -1,0 +1,8 @@
+{
+    "idd-2": {
+        "token": "abc",
+        "id": "idd",
+        "port": 8000
+    },
+    "lastWorker": "idd-2"
+}
