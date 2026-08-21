@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import socket
 import uvicorn
 import json
-from zeroconf import Zeroconf, ServiceInfo
+from zeroconf import Zeroconf
 
 app = FastAPI()
 zeroconf = Zeroconf()
@@ -41,15 +41,18 @@ def load(worker_id: str, body: LoadRequest):
 
         try:
             ip = socket.gethostbyname(str(hostname))
-        except:
-            ip = "127.0.0.1"
+        except Exception as e:
+            return {
+                "msg": "Error loading ip address",
+                "error": e
+            }
         return {
             "hostname": hostname,
             "ip": ip
         }
     else:
         return {
-            "error": "Invalid Manager"
+            "error": "Invalid Manager token"
         }
 
 
