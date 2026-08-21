@@ -5,8 +5,8 @@ from urllib import request
 import socket
 import json
  
-import manager
-import worker
+import machines.manager as manager
+import machines.worker as worker
 
 
 def run_manager():
