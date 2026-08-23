@@ -9,19 +9,30 @@ import machines.manager as manager
 import machines.worker as worker
 
 
+def ImportJsonData(path: str="data/workers.json") -> dict:
+    with open(file=path, mode="r") as file:
+        return json.load(file)
+
+
+WorkerID = ImportJsonData(path="data/main.json").get("worker", None)
+WorkerJson = ImportJsonData()
+WorkerJson = WorkerJson.get(WorkerID, WorkerJson.get("lastWorker", None))
+
+ManagerJson = ImportJsonData(path="data/manager.json")
+
 def run_manager():
     uvicorn.run(
         manager.app,
-        host="0.0.0.0",
-        port=8001,
+        host=ManagerJson.get("host", "0.0.0.0"),
+        port=ManagerJson.get("port", 8001),
     )
 
 
 def run_worker():
     uvicorn.run(
         worker.app,
-        host="0.0.0.0",
-        port=8000,
+        host=ManagerJson.get("host", "0.0.0.0"),
+        port=WorkerJson.get("port", 8000),
     )
 
 
@@ -40,15 +51,6 @@ worker_thread.start()
 
 time.sleep(1)
 
-def ImportJsonData(path: str="data/workers.json") -> dict:
-    with open(file=path, mode="r") as file:
-        return json.load(file)
-
-WorkerID = ImportJsonData(path="data/main.json").get("worker", None)
-WorkerJson = ImportJsonData()
-WorkerJson = WorkerJson.get(WorkerID, WorkerJson.get("lastWorker", None))
-
-ManagerJson = ImportJsonData(path="data/manager.json")
 
 class Worker():
     id: str = WorkerID
