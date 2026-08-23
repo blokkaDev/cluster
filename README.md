@@ -11,7 +11,7 @@ cd cluster
 ### 2) Create the Python `Venv`:
 
 ```bash
-python venv .venv
+python -m venv .venv
 ```
 
 ### 3) Activate the Venv:

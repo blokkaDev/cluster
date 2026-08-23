@@ -33,26 +33,48 @@ class Manager:
 
 @app.post("/load/{worker_id}")
 def load(worker_id: str, body: LoadRequest):
-    if body.manager_token== Manager.token:
-        hostname = workers.get(worker_id, {}).get("acs_hostname", f"acs-worker-{worker_id}._http._tcp.local.")
-
-        if not hostname:
-            hostname = f"acs-worker-{worker_id}._http._tcp.local."
-
-        try:
-            ip = socket.gethostbyname(str(hostname))
-        except Exception as e:
-            return {
-                "msg": "Error loading ip address",
-                "error": e
-            }
-        return {
-            "hostname": hostname,
-            "ip": ip
-        }
-    else:
+    if body.manager_token != Manager.token:
         return {
             "error": "Invalid Manager token"
+        }
+
+    service_name = f"acs-worker-{worker_id}._http._tcp.local."
+    try:
+        info = zeroconf.get_service_info(
+            "_http._tcp.local.",
+            service_name,
+            timeout=5000
+        )
+
+        if info is None:
+            return {
+                "msg": "Worker not found via mDNS",
+                "worker_id": worker_id,
+                "service": service_name
+            }
+
+        addresses = info.parsed_addresses()
+        if not addresses:
+            return {
+                "msg": "Worker found but has no IP address",
+                "service": service_name
+            }
+
+        return {
+            "hostname": info.server,
+            "ip": addresses[0],
+            "port": info.port,
+            "service": service_name
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
+        return {
+            "msg": "Error loading worker",
+            "error": repr(e),
+            "type": type(e).__name__
         }
 
 
