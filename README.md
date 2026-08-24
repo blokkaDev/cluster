@@ -57,7 +57,7 @@ deno --version
 ```
 If is not installed restart your terminal
 
-### 6) Final step, now you can run the program with this command:
+### 7) Final step, now you can run the program with this command:
 ```bash
 python main.py
 ```
