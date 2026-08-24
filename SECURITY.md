@@ -2,8 +2,7 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+The following versions are currently supported with security updates:
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -13,8 +12,16 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you discover a security vulnerability, please report it privately rather than opening a public GitHub issue.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Please report vulnerabilities through GitHub's private vulnerability reporting feature:
+
+- Open the **Security** tab of this repository.
+- Select **Report a vulnerability**.
+- Provide as much information as possible, including steps to reproduce the issue, affected versions, and any potential impact.
+
+We will try to acknowledge the report within **7 days** and provide updates as the investigation progresses.
+
+Please do not publicly disclose the vulnerability until it has been investigated and, where appropriate, a fix has been released.
+
+If the vulnerability is confirmed, we will work on a fix and release a security update as soon as reasonably possible.
