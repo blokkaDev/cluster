@@ -57,6 +57,7 @@ deno --version
 ```
 If is not installed restart your terminal
 
+<<<<<<< HEAD
 ## How to Run the CLI?
 #### Here is a quick list of commands to try
 
@@ -94,6 +95,9 @@ acs --help
 #### If you run it whithout the CLI you will enable the Development mode
 
 ### Development mode file
+=======
+### 7) Final step, now you can run the program with this command:
+>>>>>>> 43bfc60b5e443e4d89bbab4800f3c58941acaa49
 ```bash
 python main.py
 ```
