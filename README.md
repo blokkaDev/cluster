@@ -32,13 +32,13 @@ Windows:
 .venv\Scripts\Activate.ps1
 ```
 
-### 4) Now you should be able to download the requirements:
+### 4) Install ACS:
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
-### 5) Download Deno to use the sandbox
+### 5) Download Deno to use the sandbox:
 
 Linux/MacOS:
 ```bash
@@ -50,14 +50,52 @@ Windows:
 irm https://deno.land/install.ps1 | iex
 ```
 
-### 6) Check if Deno is installed
+### 6) Check if Deno is installed:
 
 ```bash
 deno --version
 ```
 If is not installed restart your terminal
 
-### 6) Final step, now you can run the program with this command:
+## How to Run the CLI?
+#### Here is a quick list of commands to try
+
+### Start the manager
+```bash
+acs start --manager
+```
+
+### Start the worker
+```bash
+acs start --worker
+```
+
+### Connect the manager with the worker
+```bash
+acs connect
+```
+
+### Now it's time to load the worker to the manager
+```bash
+acs load
+```
+
+### Run a python file
+```bash
+acs run file_name --python
+```
+
+### Command list
+```bash
+acs --help
+```
+
+## How to Run it whithout the CLI?
+#### If you run it whithout the CLI you will enable the Development mode
+
+### Development mode file
 ```bash
 python main.py
 ```
+
+##### THIS IS THE FIRST VERSION OF THE CLI SO THE COMMAND ARE NOT PERFECT

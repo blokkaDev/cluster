@@ -11,3 +11,7 @@ wheels/
 
 # Node modeules
 node_modules/
+
+# Others
+check/
+data/pids/*.pid

@@ -62,7 +62,7 @@ def UpdateWorkerHostname() -> dict:
         "service": info.name,
     }
 
-print(UpdateWorkerHostname())
+UpdateWorkerHostname()
 
 class ConnectRequest(BaseModel):
     token: str

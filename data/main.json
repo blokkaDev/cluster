@@ -1,3 +1,4 @@
 {
-    "worker": "idd-2"
+    "worker": "idd-2",
+    "manager": true
 }

@@ -3,3 +3,4 @@ uvicorn
 pydantic
 zeroconf
 langchain_sandbox
+typer
