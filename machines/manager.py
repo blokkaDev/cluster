@@ -18,6 +18,17 @@ class ConnectRequest(BaseModel):
     ip: str = "127.0.0.1"
     manager_token: str
 
+class ExecuteConnectRequest(BaseModel):
+    token: str
+    remember: bool = True
+    port: str = "8000"
+    ip: str = "127.0.0.1"
+    manager_token: str
+    language: str
+    code: str
+    return_ip: str
+    return_port: str
+
 class LoadRequest(BaseModel):
     token: str
     manager_token: str
@@ -161,6 +172,41 @@ def connect(worker_id: str, body: ConnectRequest):
         return {
             "error": "Invalid Manager"
         }
+
+
+@app.post("/execute/{worker_id}")
+def execute(worker_id: str, body: ExecuteConnectRequest):
+    if body.manager_token== Manager.token:
+        hostname = f"acs.worker-{worker_id}.local"
+
+        data = json.dumps({
+            "token": body.token,
+            "hostname": hostname,
+            "manager_token": Manager.token,
+            "manager_hostname": socket.gethostname(),
+            "language": body.language,
+            "code": body.code,
+            "return_ip": body.return_ip,
+            "return_port": body.return_port
+        }).encode("utf-8")
+
+        #ip= socket.gethostbyname(hostname)
+        try:
+            req = request.Request(
+                f"http://{body.ip}:{body.port}/run/code/{worker_id}",
+                data=data,
+                headers={
+                    "Content-Type": "application/json"
+                },
+                method="POST"
+            )
+
+            return json.loads(request.urlopen(req).read().decode("utf-8"))
+        except error.HTTPError as e:
+            return {
+                "error": e,
+                "page": f"http://{body.ip}:{body.port}/run/code/{worker_id}"
+            } 
 
 #curl -X POST http://localhost:8000 \
 # -H "Content-Type: application/json" \

@@ -25,6 +25,7 @@ def run_manager():
         manager.app,
         host=ManagerJson.get("host", "0.0.0.0"),
         port=ManagerJson.get("port", 8001),
+        log_config=None
     )
 
 
@@ -33,6 +34,7 @@ def run_worker():
         worker.app,
         host=ManagerJson.get("host", "0.0.0.0"),
         port=WorkerJson.get("port", 8000),
+        log_config=None
     )
 
 
@@ -100,6 +102,18 @@ print(post(
     data={
         "token": str(Worker.token),
         "manager_token": str(Manager.token)
+    }
+))
+
+print(post(
+    url=f"http://{Manager.ip}:{Manager.port}/execute/{Worker.id}",
+    data={
+        "token": str(Worker.token),
+        "manager_token": str(Manager.token),
+        "language": "pytohn",
+        "code": "print('this is a test')",
+        "return_ip": str(Manager.ip),
+        "return_port": str(Manager.port)
     }
 ))
 

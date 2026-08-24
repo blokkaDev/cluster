@@ -2,3 +2,4 @@ fastapi
 uvicorn
 pydantic
 zeroconf
+langchain_sandbox

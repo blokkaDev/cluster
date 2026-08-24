@@ -5,7 +5,10 @@ import socket
 import json
 import uvicorn
 
-app= FastAPI()
+from langs import Python
+
+app = FastAPI()
+python = Python()
 
 def ImportJsonData(path: str="data/workers.json") -> dict:
     with open(file=path, mode="r") as file:
@@ -64,6 +67,17 @@ print(UpdateWorkerHostname())
 class ConnectRequest(BaseModel):
     token: str
 
+class CodeRunnerRequest(BaseModel):
+    token: str
+    hostname: str
+    manager_token: str
+    manager_hostname: str
+    remember: bool = True
+    language: str
+    code: str
+    return_ip: str
+    return_port: str
+
 class ConnectManagerRequest(BaseModel):
     token: str
     hostname: str
@@ -99,8 +113,36 @@ def get_hostname(body: ConnectRequest):
         return {"error": "Invalid token"}
 
 @app.post("/load/{worker_id}")
-def load_worker(worker_id: str, body: ConnectManagerRequest, request: Request):
+def load_worker(worker_id: str, body: ConnectManagerRequest):
     pass
+
+@app.post("/run/code/{worker_id}")
+async def execute_code(worker_id: str, body: CodeRunnerRequest, request: Request):
+    if CheckConnectionStatus(body, worker_id):
+        # the worker will send the result to a specified machine
+        requester_ip = request.client.host
+        return_ip = body.return_ip
+        return_port = body.return_port
+
+        result = await python.execute(body.code)
+
+        if result.status == "success":
+            result.status = True
+        else:
+            result.status = False
+
+        return {
+            "result": {
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "status": result.status,
+                "execution_time": result.execution_time
+            }
+        }
+    
+        #return {"requester_ip": requester_ip, "return": {"ip": return_ip, "port": return_port}} I'm gonna add this when I'll add the task chains
+    else:
+        return {"error": "Invalid Data provided!", "recived": body}
 
 @app.post("/connect/{worker_id}")
 def connect_manager(worker_id: str, body: ConnectManagerRequest, request: Request):
