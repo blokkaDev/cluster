@@ -5,23 +5,24 @@ import socket
 import json
 import uvicorn
 from pathlib import Path
+from importlib.resources import files
 
 from langs import Python
 
 app = FastAPI()
 python = Python()
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = files("data")
 
-def ImportJsonData(path: str=BASE_DIR / "data" / "workers.json") -> dict:
-    with open(file=path, mode="r") as file:
+def ImportJsonData(path: str="workers.json") -> dict:
+    with open(file=DATA_DIR / path, mode="r") as file:
         return json.load(file)
 
-WorkerID = ImportJsonData(path=BASE_DIR / "data" / "main.json").get("worker", None)
+WorkerID = ImportJsonData(path="main.json").get("worker", None)
 WorkerJson = ImportJsonData()
 WorkerJson = WorkerJson.get(WorkerID, WorkerJson.get("lastWorker", None))
 
-ManagerJson = ImportJsonData(path=BASE_DIR / "data" / "manager.json")
+ManagerJson = ImportJsonData(path="manager.json")
 
 class Worker():
     token: str = WorkerJson.get("token", None)

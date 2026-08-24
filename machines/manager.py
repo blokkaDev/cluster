@@ -5,6 +5,7 @@ import socket
 import uvicorn
 import json
 from zeroconf import Zeroconf
+from importlib.resources import files
 
 app = FastAPI()
 zeroconf = Zeroconf()
@@ -33,8 +34,10 @@ class LoadRequest(BaseModel):
     token: str
     manager_token: str
 
-def ImportJsonData(path: str="data/manager.json") -> dict:
-    with open(file=path, mode="r") as file:
+DATA_DIR = files("data")
+
+def ImportJsonData(path: str="manager.json") -> dict:
+    with open(file=DATA_DIR / path, mode="r") as file:
         return json.load(file)
 
 ManagerJson = ImportJsonData()

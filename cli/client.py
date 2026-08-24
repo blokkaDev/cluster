@@ -3,22 +3,21 @@ import threading
 from urllib import request
 from urllib.error import HTTPError
 
-from pathlib import Path
-
+from importlib.resources import files
 
 class ACSClient:
     def __init__(self):
-        BASE_DIR = Path(__file__).resolve().parent.parent
+        BASE_DIR = files("data")
         
-        self.main = self._json(BASE_DIR / "data" / "main.json")
-        self.workers = self._json(BASE_DIR / "data" / "workers.json")
+        self.main = self._json(BASE_DIR / "main.json")
+        self.workers = self._json(BASE_DIR / "workers.json")
         self.worker_id = self.main.get("worker")
         self.worker = self.workers.get(
             self.worker_id,
             self.workers.get("lastWorker", {})
         )
 
-        self.manager = self._json(BASE_DIR / "data" / "manager.json")
+        self.manager = self._json(BASE_DIR / "manager.json")
         self._manager_thread = None
         self._worker_thread = None
 

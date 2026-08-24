@@ -1,5 +1,10 @@
 # ACS - Clustering system
 
+## Requirements
+
+ - Python 3.12+
+ - pipx
+
 ## How to Download?
 ### 1) Make sure to download the GitHub repo:
 
@@ -8,7 +13,28 @@ git clone https://github.com/blokkaDev/cluster.git
 cd cluster
 ```
 
-### 2) Create the Python `Venv`:
+## Using pipx
+
+### 1) Install ACS with pipx: 
+```bash
+pipx install .
+```
+
+### 2) If pipx us not yet avaiable in your path run:
+```bash
+pipx ensurepath
+``` 
+Now restart your terminal
+
+You should be able to use acs in any directory
+
+Try running this command:
+```bash
+acs --help
+``` 
+
+## Development
+### 1) Create the Python `Venv`:
 
 Linux/MacOS:
 ```bash
@@ -20,7 +46,7 @@ Windows:
 python -m venv .venv
 ```
 
-### 3) Activate the Venv:
+### 2) Activate the Venv:
 
 Linux/MacOS:
 ```bash
@@ -32,13 +58,13 @@ Windows:
 .venv\Scripts\Activate.ps1
 ```
 
-### 4) Install ACS:
+### 3) Install ACS:
 
 ```bash
 pip install -e .
 ```
 
-### 5) Download Deno to use the sandbox:
+### 4) Download Deno to use the sandbox:
 
 Linux/MacOS:
 ```bash
@@ -50,7 +76,7 @@ Windows:
 irm https://deno.land/install.ps1 | iex
 ```
 
-### 6) Check if Deno is installed:
+### 5) Check if Deno is installed:
 
 ```bash
 deno --version
@@ -93,7 +119,7 @@ acs --help
 ## How to Run it whithout the CLI?
 #### If you run it whithout the CLI you will enable the Development mode
 
-### Run the Development mode file
+### Run the Development mode file in the root directory of the project
 ```bash
 python main.py
 ```
