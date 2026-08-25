@@ -1,16 +1,18 @@
-from fastapi import FastAPI
-from urllib import request, error
-from pydantic import BaseModel
-import socket
-import uvicorn
 import json
-from zeroconf import Zeroconf
+import socket
 from importlib.resources import files
+from urllib import error, request
+
+import uvicorn
+from fastapi import FastAPI
+from pydantic import BaseModel
+from zeroconf import Zeroconf
 
 app = FastAPI()
 zeroconf = Zeroconf()
 
 workers = {}
+
 
 class ConnectRequest(BaseModel):
     token: str
@@ -18,6 +20,7 @@ class ConnectRequest(BaseModel):
     port: str = "8000"
     ip: str = "127.0.0.1"
     manager_token: str
+
 
 class ExecuteConnectRequest(BaseModel):
     token: str
@@ -30,89 +33,92 @@ class ExecuteConnectRequest(BaseModel):
     return_ip: str
     return_port: str
 
+
 class LoadRequest(BaseModel):
     token: str
     manager_token: str
 
+
 DATA_DIR = files("data")
 
-def ImportJsonData(path: str="manager.json") -> dict:
+
+def ImportJsonData(path: str = "manager.json") -> dict:
     with open(file=DATA_DIR / path, mode="r") as file:
         return json.load(file)
 
+
 ManagerJson = ImportJsonData()
 
+
 class Manager:
-   token: str = ManagerJson.get("token", None)
+    token: str = ManagerJson.get("token", None)
+
 
 @app.post("/load/{worker_id}")
 def load(worker_id: str, body: LoadRequest):
     if body.manager_token != Manager.token:
-        return {
-            "error": "Invalid Manager token"
-        }
+        return {"error": "Invalid Manager token"}
 
     service_name = f"acs-worker-{worker_id}._http._tcp.local."
     try:
         info = zeroconf.get_service_info(
-            "_http._tcp.local.",
-            service_name,
-            timeout=5000
+            "_http._tcp.local.", service_name, timeout=5000
         )
 
         if info is None:
             return {
                 "msg": "Worker not found via mDNS",
                 "worker_id": worker_id,
-                "service": service_name
+                "service": service_name,
             }
 
         addresses = info.parsed_addresses()
         if not addresses:
             return {
                 "msg": "Worker found but has no IP address",
-                "service": service_name
+                "service": service_name,
             }
 
         return {
             "hostname": info.server,
             "ip": addresses[0],
             "port": info.port,
-            "service": service_name
+            "service": service_name,
         }
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
 
         return {
             "msg": "Error loading worker",
             "error": repr(e),
-            "type": type(e).__name__
+            "type": type(e).__name__,
         }
 
 
 @app.post("/connect/{worker_id}")
 def connect(worker_id: str, body: ConnectRequest):
-    if body.manager_token== Manager.token:
+    if body.manager_token == Manager.token:
         hostname = f"acs.worker-{worker_id}.local"
 
-        data = json.dumps({
-            "token": body.token,
-            "hostname": hostname,
-            "manager_token": Manager.token,
-            "manager_hostname": socket.gethostname()
-        }).encode("utf-8")
+        data = json.dumps(
+            {
+                "token": body.token,
+                "hostname": hostname,
+                "manager_token": Manager.token,
+                "manager_hostname": socket.gethostname(),
+            }
+        ).encode("utf-8")
 
-        #ip= socket.gethostbyname(hostname)
+        # ip= socket.gethostbyname(hostname)
         try:
             req = request.Request(
                 f"http://{body.ip}:{body.port}/connect/{worker_id}",
                 data=data,
-                headers={
-                    "Content-Type": "application/json"
-                },
-                method="POST"
+                headers={"Content-Type": "application/json"},
+                method="POST",
             )
 
             main_resp = request.urlopen(req)
@@ -123,10 +129,7 @@ def connect(worker_id: str, body: ConnectRequest):
                 redirect = main_body.get("redirect", None)
             except Exception as e:
                 redirect = None
-                sec_resp = {
-                    "error": e,
-                    "page": None
-                }
+                sec_resp = {"error": e, "page": None}
 
             if redirect:
                 try:
@@ -135,83 +138,76 @@ def connect(worker_id: str, body: ConnectRequest):
                     req = request.Request(
                         f"http://{redirect.get('ip', '127.0.0.1')}:{redirect.get('port', '8000')}{redirect.get('page', '/')}",
                         data=redirect_data,
-                        headers={
-                            "Content-Type": "application/json"
-                        },
-                        method=redirect.get("method", "POST")
+                        headers={"Content-Type": "application/json"},
+                        method=redirect.get("method", "POST"),
                     )
 
                     sec_resp = request.urlopen(req)
                 except error.HTTPError as e:
-                    sec_resp= {
+                    sec_resp = {
                         "error": e,
-                        "page": f"http://{redirect.get("ip", "127.0.0.1")}:{redirect.get("port", "8000")}{redirect.get("page", "/")}"
+                        "page": f"http://{redirect.get('ip', '127.0.0.1')}:{redirect.get('port', '8000')}{redirect.get('page', '/')}",
                     }
-            
+
         except error.HTTPError as e:
             return {
                 "error": e,
-                "page": f"http://{body.ip}:{body.port}/connect/{worker_id}"
+                "page": f"http://{body.ip}:{body.port}/connect/{worker_id}",
             }
-        
 
         try:
             redirect_body = json.loads(sec_resp.read().decode("utf-8"))
         except (UnboundLocalError, AttributeError):
             redirect_body = sec_resp
 
-        workers[worker_id]= {
+        workers[worker_id] = {
             "acs_hostname": redirect_body.get("state", {}).get("hostname", None),
             "ip": body.ip,
             "port": body.port,
-            "hostname": redirect_body.get("hostname", None)
+            "hostname": redirect_body.get("hostname", None),
         }
 
-        return {
-            "response": main_body, 
-            "redirect": redirect_body
-        }
+        return {"response": main_body, "redirect": redirect_body}
     else:
-        return {
-            "error": "Invalid Manager"
-        }
+        return {"error": "Invalid Manager"}
 
 
 @app.post("/execute/{worker_id}")
 def execute(worker_id: str, body: ExecuteConnectRequest):
-    if body.manager_token== Manager.token:
+    if body.manager_token == Manager.token:
         hostname = f"acs.worker-{worker_id}.local"
 
-        data = json.dumps({
-            "token": body.token,
-            "hostname": hostname,
-            "manager_token": Manager.token,
-            "manager_hostname": socket.gethostname(),
-            "language": body.language,
-            "code": body.code,
-            "return_ip": body.return_ip,
-            "return_port": body.return_port
-        }).encode("utf-8")
+        data = json.dumps(
+            {
+                "token": body.token,
+                "hostname": hostname,
+                "manager_token": Manager.token,
+                "manager_hostname": socket.gethostname(),
+                "language": body.language,
+                "code": body.code,
+                "return_ip": body.return_ip,
+                "return_port": body.return_port,
+            }
+        ).encode("utf-8")
 
-        #ip= socket.gethostbyname(hostname)
+        # ip= socket.gethostbyname(hostname)
         try:
             req = request.Request(
                 f"http://{body.ip}:{body.port}/run/code/{worker_id}",
                 data=data,
-                headers={
-                    "Content-Type": "application/json"
-                },
-                method="POST"
+                headers={"Content-Type": "application/json"},
+                method="POST",
             )
 
             return json.loads(request.urlopen(req).read().decode("utf-8"))
         except error.HTTPError as e:
             return {
                 "error": e,
-                "page": f"http://{body.ip}:{body.port}/run/code/{worker_id}"
-            } 
+                "page": f"http://{body.ip}:{body.port}/run/code/{worker_id}",
+            }
 
-#curl -X POST http://localhost:8000 \
+
+# curl -X POST http://localhost:8000 \
 # -H "Content-Type: application/json" \
 # -d '{"token":"3geyegyded8wgfyiuwh","remember":True, "port": "8000"}'
 

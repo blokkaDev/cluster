@@ -16,3 +16,4 @@ node_modules/
 check/
 data/pids/*.pid
 test/
+.zed/

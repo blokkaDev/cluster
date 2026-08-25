@@ -1,20 +1,19 @@
 import json
 import threading
+from importlib.resources import files
 from urllib import request
 from urllib.error import HTTPError
 
-from importlib.resources import files
 
 class ACSClient:
     def __init__(self):
         BASE_DIR = files("data")
-        
+
         self.main = self._json(BASE_DIR / "main.json")
         self.workers = self._json(BASE_DIR / "workers.json")
         self.worker_id = self.main.get("worker")
         self.worker = self.workers.get(
-            self.worker_id,
-            self.workers.get("lastWorker", {})
+            self.worker_id, self.workers.get("lastWorker", {})
         )
 
         self.manager = self._json(BASE_DIR / "manager.json")
@@ -30,7 +29,7 @@ class ACSClient:
             url,
             data=json.dumps(data).encode(),
             headers={"Content-Type": "application/json"},
-            method="POST"
+            method="POST",
         )
 
         try:
@@ -56,7 +55,7 @@ class ACSClient:
                 "manager_token": self.manager.get("token"),
                 "ip": self.workers.get("host", "127.0.0.1"),
                 "port": str(self.worker.get("port", 8000)),
-            }
+            },
         )
 
     def load(self):
@@ -65,7 +64,7 @@ class ACSClient:
             {
                 "token": self.worker.get("token"),
                 "manager_token": self.manager.get("token"),
-            }
+            },
         )
 
     def execute(self, code, language="python"):
@@ -78,29 +77,31 @@ class ACSClient:
                 "code": code,
                 "return_ip": self.manager.get("host", "127.0.0.1"),
                 "return_port": str(self.manager.get("port", 8001)),
-            }
+            },
         )
 
     def _run_manager(self):
         import uvicorn
-        import machines.manager as manager
+
+        from machines import manager
 
         uvicorn.run(
             manager.app,
             host=self.manager.get("host", "0.0.0.0"),
             port=self.manager.get("port", 8001),
-            log_config=None
+            log_config=None,
         )
 
     def _run_worker(self):
         import uvicorn
-        import machines.worker as worker
+
+        from machines import worker
 
         uvicorn.run(
             worker.app,
             host=self.worker.get("host", "0.0.0.0"),
             port=self.worker.get("port", 8000),
-            log_config=None
+            log_config=None,
         )
 
     def start(self, manager=None):
@@ -109,8 +110,7 @@ class ACSClient:
                 return {"state": True, "node": "manager", "status": "already_running"}
 
             self._manager_thread = threading.Thread(
-                target=self._run_manager,
-                daemon=True
+                target=self._run_manager, daemon=True
             )
             self._manager_thread.start()
 
@@ -118,24 +118,21 @@ class ACSClient:
                 "state": True,
                 "node": "manager",
                 "host": self.manager.get("host", "0.0.0.0"),
-                "port": self.manager.get("port", 8001)
+                "port": self.manager.get("port", 8001),
             }
 
         if manager is False:
             if self._worker_thread and self._worker_thread.is_alive():
                 return {"state": True, "node": "worker", "status": "already_running"}
 
-            self._worker_thread = threading.Thread(
-                target=self._run_worker,
-                daemon=True
-            )
+            self._worker_thread = threading.Thread(target=self._run_worker, daemon=True)
             self._worker_thread.start()
 
             return {
                 "state": True,
                 "node": "worker",
                 "host": self.worker.get("host", "0.0.0.0"),
-                "port": self.worker.get("port", 8000)
+                "port": self.worker.get("port", 8000),
             }
 
         return {"state": False, "error": "Specify --manager or --worker"}

@@ -1,15 +1,16 @@
+import json
+import socket
 import threading
 import time
-import uvicorn
+from this import d
 from urllib import request
-import socket
-import json
- 
-import machines.manager as manager
-import machines.worker as worker
+
+import uvicorn
+
+from machines import manager, worker
 
 
-def ImportJsonData(path: str="data/workers.json") -> dict:
+def ImportJsonData(path: str = "data/workers.json") -> dict:
     with open(file=path, mode="r") as file:
         return json.load(file)
 
@@ -20,12 +21,13 @@ WorkerJson = WorkerJson.get(WorkerID, WorkerJson.get("lastWorker", None))
 
 ManagerJson = ImportJsonData(path="data/manager.json")
 
+
 def run_manager():
     uvicorn.run(
         manager.app,
         host=ManagerJson.get("host", "0.0.0.0"),
         port=ManagerJson.get("port", 8001),
-        log_config=None
+        log_config=None,
     )
 
 
@@ -34,7 +36,7 @@ def run_worker():
         worker.app,
         host=ManagerJson.get("host", "0.0.0.0"),
         port=WorkerJson.get("port", 8000),
-        log_config=None
+        log_config=None,
     )
 
 
@@ -54,19 +56,21 @@ worker_thread.start()
 time.sleep(1)
 
 
-class Worker():
+class Worker:
     id: str = WorkerID
     token: str = WorkerJson.get("token", None)
     port: int = WorkerJson.get("port", None)
     ip: str = "127.0.0.1"
 
-class Manager():
+
+class Manager:
     token: str = ManagerJson.get("token", None)
     connected: bool = False
     hostname: str = socket.gethostname()
     remember: bool = ManagerJson.get("remember", None)
     port: int = ManagerJson.get("port", None)
     ip: str = "127.0.0.1"
+
 
 def post(url, data):
     req = request.Request(
@@ -76,7 +80,7 @@ def post(url, data):
             "accept": "application/json",
             "Content-Type": "application/json",
         },
-        method="POST"
+        method="POST",
     )
 
     with request.urlopen(req) as response:
@@ -85,7 +89,7 @@ def post(url, data):
     return result
 
 
-#connect Worker.id to Manager
+# connect Worker.id to Manager
 post(
     url=f"http://{Manager.ip}:{Manager.port}/connect/{Worker.id}",
     data={
@@ -93,32 +97,30 @@ post(
         "remember": str(Manager.remember),
         "manager_token": str(Manager.token),
         "ip": str(Worker.ip),
-        "port": str(Worker.port)
-    }
+        "port": str(Worker.port),
+    },
 )
 
-print(post(
-    url=f"http://{Manager.ip}:{Manager.port}/load/{Worker.id}",
-    data={
-        "token": str(Worker.token),
-        "manager_token": str(Manager.token)
-    }
-))
+print(
+    post(
+        url=f"http://{Manager.ip}:{Manager.port}/load/{Worker.id}",
+        data={"token": str(Worker.token), "manager_token": str(Manager.token)},
+    )
+)
 
-print(post(
-    url=f"http://{Manager.ip}:{Manager.port}/execute/{Worker.id}",
-    data={
-        "token": str(Worker.token),
-        "manager_token": str(Manager.token),
-        "language": "pytohn",
-        "code": "print('this is a test')",
-        "return_ip": str(Manager.ip),
-        "return_port": str(Manager.port)
-    }
-))
-
-
-
+print(
+    post(
+        url=f"http://{Manager.ip}:{Manager.port}/execute/{Worker.id}",
+        data={
+            "token": str(Worker.token),
+            "manager_token": str(Manager.token),
+            "language": "pytohn",
+            "code": "print('this is a test')",
+            "return_ip": str(Manager.ip),
+            "return_port": str(Manager.port),
+        },
+    )
+)
 
 
 try:

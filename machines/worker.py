@@ -1,11 +1,11 @@
+import json
+import socket
+from importlib.resources import files
+
+import uvicorn
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
-from zeroconf import Zeroconf, ServiceInfo
-import socket
-import json
-import uvicorn
-from pathlib import Path
-from importlib.resources import files
+from zeroconf import ServiceInfo, Zeroconf
 
 from langs import Python
 
@@ -24,7 +24,7 @@ WorkerJson = WorkerJson.get(WorkerID, WorkerJson.get("lastWorker", None))
 
 ManagerJson = ImportJsonData(path="manager.json")
 
-class Worker():
+class Worker:
     token: str = WorkerJson.get("token", None)
     id: str = WorkerID
     port: int = WorkerJson.get("port", None)
@@ -34,7 +34,7 @@ class Worker():
 
     record: bool = False
 
-class Manager():
+class Manager:
     token: str = ManagerJson.get("token", None)
     connected: bool = False
     hostname: str = ManagerJson.get("hostname", None)
@@ -44,7 +44,7 @@ zeroconf = Zeroconf()
 
 def UpdateWorkerHostname() -> dict:
     hostname = Worker.hostname.rstrip(".") + "."
-    service_name = f"_http._tcp.local."
+    service_name = "_http._tcp.local."
     info = ServiceInfo(
         service_name,
         f"acs-worker-{Worker.id}._http._tcp.local.",
@@ -143,7 +143,7 @@ async def execute_code(worker_id: str, body: CodeRunnerRequest, request: Request
                 "execution_time": result.execution_time
             }
         }
-    
+
         #return {"requester_ip": requester_ip, "return": {"ip": return_ip, "port": return_port}} I'm gonna add this when I'll add the task chains
     else:
         return {"error": "Invalid Data provided!", "recived": body}
@@ -167,7 +167,7 @@ def connect_manager(worker_id: str, body: ConnectManagerRequest, request: Reques
             Manager.remember = body.remember
         except Exception as e:
             return {"error": f"Error connecting Manager, Err: {e}"}
-        
+
         return {
             "redirect": {
                 "ip": socket.gethostbyname(socket.gethostname()),
@@ -184,7 +184,7 @@ def connect_manager(worker_id: str, body: ConnectManagerRequest, request: Reques
                 "method": "POST"
             },
             "requester": {
-                "ip": request.client.host, 
+                "ip": request.client.host,
                 "hostname": body.manager_hostname
             }
         }

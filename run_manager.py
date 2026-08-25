@@ -1,7 +1,7 @@
-import machines.manager as manager
+from machines import manager
 
 manager.uvicorn.run(
 	manager.app,
-	port="8001",
+	port=8001,
 	host="127.0.0.1"
 )
