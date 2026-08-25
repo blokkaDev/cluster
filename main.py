@@ -2,7 +2,6 @@ import json
 import socket
 import threading
 import time
-from this import d
 from urllib import request
 
 import uvicorn

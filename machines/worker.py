@@ -14,15 +14,18 @@ python = Python()
 
 DATA_DIR = files("data")
 
-def ImportJsonData(path: str="workers.json") -> dict:
+
+def ImportJsonData(path: str = "workers.json") -> dict:
     with open(file=DATA_DIR / path, mode="r") as file:
         return json.load(file)
+
 
 WorkerID = ImportJsonData(path="main.json").get("worker", None)
 WorkerJson = ImportJsonData()
 WorkerJson = WorkerJson.get(WorkerID, WorkerJson.get("lastWorker", None))
 
 ManagerJson = ImportJsonData(path="manager.json")
+
 
 class Worker:
     token: str = WorkerJson.get("token", None)
@@ -34,13 +37,16 @@ class Worker:
 
     record: bool = False
 
+
 class Manager:
     token: str = ManagerJson.get("token", None)
     connected: bool = False
     hostname: str = ManagerJson.get("hostname", None)
     remember: bool = ManagerJson.get("remember", None)
 
+
 zeroconf = Zeroconf()
+
 
 def UpdateWorkerHostname() -> dict:
     hostname = Worker.hostname.rstrip(".") + "."
@@ -66,10 +72,13 @@ def UpdateWorkerHostname() -> dict:
         "service": info.name,
     }
 
+
 UpdateWorkerHostname()
+
 
 class ConnectRequest(BaseModel):
     token: str
+
 
 class CodeRunnerRequest(BaseModel):
     token: str
@@ -82,12 +91,14 @@ class CodeRunnerRequest(BaseModel):
     return_ip: str
     return_port: str
 
+
 class ConnectManagerRequest(BaseModel):
     token: str
     hostname: str
     manager_token: str
     manager_hostname: str
     remember: bool = True
+
 
 def CheckConnectionStatus(body, worker_id):
     if Manager.connected and worker_id == Worker.id:
@@ -96,18 +107,17 @@ def CheckConnectionStatus(body, worker_id):
                 return True
     return False
 
+
 @app.post("/set/hostname/{worker_id}/{new_hostname}")
 def set_hostname(worker_id: str, new_hostname: str, body: ConnectManagerRequest):
     if CheckConnectionStatus(body, worker_id):
         Worker.hostname = new_hostname
-        state= UpdateWorkerHostname()
+        state = UpdateWorkerHostname()
 
-        return {
-            "hostname": socket.gethostname(),
-            "state": state
-        }
+        return {"hostname": socket.gethostname(), "state": state}
     else:
         return {"error": "Invalid Data provided!"}
+
 
 @app.post("/get/hostname")
 def get_hostname(body: ConnectRequest):
@@ -116,9 +126,11 @@ def get_hostname(body: ConnectRequest):
     else:
         return {"error": "Invalid token"}
 
+
 @app.post("/load/{worker_id}")
 def load_worker(worker_id: str, body: ConnectManagerRequest):
     pass
+
 
 @app.post("/run/code/{worker_id}")
 async def execute_code(worker_id: str, body: CodeRunnerRequest, request: Request):
@@ -140,13 +152,14 @@ async def execute_code(worker_id: str, body: CodeRunnerRequest, request: Request
                 "stdout": result.stdout,
                 "stderr": result.stderr,
                 "status": result.status,
-                "execution_time": result.execution_time
+                "execution_time": result.execution_time,
             }
         }
 
-        #return {"requester_ip": requester_ip, "return": {"ip": return_ip, "port": return_port}} I'm gonna add this when I'll add the task chains
+        # return {"requester_ip": requester_ip, "return": {"ip": return_ip, "port": return_port}} I'm gonna add this when I'll add the task chains
     else:
         return {"error": "Invalid Data provided!", "recived": body}
+
 
 @app.post("/connect/{worker_id}")
 def connect_manager(worker_id: str, body: ConnectManagerRequest, request: Request):
@@ -154,11 +167,19 @@ def connect_manager(worker_id: str, body: ConnectManagerRequest, request: Reques
         if not body.manager_token and not body.manager_hostname:
             return {"error": "Workers can only connect with Managers"}
 
-        if Manager.connected and Manager.token== body.manager_token and Manager.hostname== body.manager_hostname:
-            return {"error": f"Manager: {body.manager_hostname} is already connected to worker: acs.worker-{worker_id}.local"}
+        if (
+            Manager.connected
+            and Manager.token == body.manager_token
+            and Manager.hostname == body.manager_hostname
+        ):
+            return {
+                "error": f"Manager: {body.manager_hostname} is already connected to worker: acs.worker-{worker_id}.local"
+            }
 
         if Manager.connected:
-            return {"error": f"Worker: acs.worker-{worker_id}.local is already connected to an other Manager"}
+            return {
+                "error": f"Worker: acs.worker-{worker_id}.local is already connected to an other Manager"
+            }
 
         try:
             Manager.token = body.manager_token
@@ -168,9 +189,14 @@ def connect_manager(worker_id: str, body: ConnectManagerRequest, request: Reques
         except Exception as e:
             return {"error": f"Error connecting Manager, Err: {e}"}
 
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+
         return {
             "redirect": {
-                "ip": socket.gethostbyname(socket.gethostname()),
+                "ip": ip,
                 "hostname": socket.gethostname(),
                 "port": Worker.port,
                 "page": f"/set/hostname/{worker_id}/acs.worker-{worker_id}._http._tcp.local.",
@@ -179,17 +205,15 @@ def connect_manager(worker_id: str, body: ConnectManagerRequest, request: Reques
                     "hostname": body.hostname,
                     "manager_token": body.manager_token,
                     "manager_hostname": body.manager_hostname,
-                    "remember": body.remember
+                    "remember": body.remember,
                 },
-                "method": "POST"
+                "method": "POST",
             },
-            "requester": {
-                "ip": request.client.host,
-                "hostname": body.manager_hostname
-            }
+            "requester": {"ip": request.client.host, "hostname": body.manager_hostname},
         }
     else:
         return {"error": "Invalid token"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

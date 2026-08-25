@@ -53,7 +53,7 @@ class ACSClient:
                 "token": self.worker.get("token"),
                 "remember": self.manager.get("remember", True),
                 "manager_token": self.manager.get("token"),
-                "ip": self.workers.get("host", "127.0.0.1"),
+                "ip": self.worker.get("host", "127.0.0.1"),
                 "port": str(self.worker.get("port", 8000)),
             },
         )
@@ -68,17 +68,25 @@ class ACSClient:
         )
 
     def execute(self, code, language="python"):
-        return self._post(
-            self._manager_url(f"/execute/{self.worker_id}"),
-            {
-                "token": self.worker.get("token"),
-                "manager_token": self.manager.get("token"),
-                "language": language,
-                "code": code,
-                "return_ip": self.manager.get("host", "127.0.0.1"),
-                "return_port": str(self.manager.get("port", 8001)),
-            },
-        )
+        try:
+            return self._post(
+                self._manager_url(f"/execute/{self.worker_id}"),
+                {
+                    "token": self.worker.get("token"),
+                    "manager_token": self.manager.get("token"),
+                    "language": language,
+                    "code": code,
+                    "return_ip": self.manager.get("host", "127.0.0.1"),
+                    "return_port": str(self.manager.get("port", 8001)),
+                    "ip": self.worker.get("host", "127.0.0.1"),
+                    "port": str(self.worker.get("port", 8000)),
+                },
+            )
+        except Exception as e:
+            print(e)
+            return {
+                "error": e,
+            }
 
     def _run_manager(self):
         import uvicorn
