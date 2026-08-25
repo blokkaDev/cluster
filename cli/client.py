@@ -43,7 +43,7 @@ class ACSClient:
             raise
 
     def _manager_url(self, path):
-        host = self.manager.get("ip", "127.0.0.1")
+        host = self.manager.get("host", "127.0.0.1")
         port = self.manager.get("port", 8001)
         return f"http://{host}:{port}{path}"
 
@@ -54,7 +54,7 @@ class ACSClient:
                 "token": self.worker.get("token"),
                 "remember": self.manager.get("remember", True),
                 "manager_token": self.manager.get("token"),
-                "ip": "127.0.0.1",
+                "ip": self.workers.get("host", "127.0.0.1"),
                 "port": str(self.worker.get("port", 8000)),
             }
         )
@@ -76,7 +76,7 @@ class ACSClient:
                 "manager_token": self.manager.get("token"),
                 "language": language,
                 "code": code,
-                "return_ip": self.manager.get("ip", "127.0.0.1"),
+                "return_ip": self.manager.get("host", "127.0.0.1"),
                 "return_port": str(self.manager.get("port", 8001)),
             }
         )

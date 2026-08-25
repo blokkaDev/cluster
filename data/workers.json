@@ -2,7 +2,8 @@
     "idd-2": {
         "token": "abc",
         "id": "idd",
-        "port": 8000
+        "port": 8000,
+	"host": "127.0.0.1"
     },
     "lastWorker": "idd-2"
 }
