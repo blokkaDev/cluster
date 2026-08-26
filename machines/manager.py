@@ -1,5 +1,8 @@
+# from main import ManagerJson
 import json
 import socket
+import sqlite3
+import urllib
 from importlib.resources import files
 from urllib import error, request
 
@@ -8,10 +11,54 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from zeroconf import Zeroconf
 
+from data.env import Env
+from data.sqlite import Database
+
 app = FastAPI()
 zeroconf = Zeroconf()
+env = Env()
+db = Database()
 
+env.get_all()
+ManagerJson = env.ManagerJson
+
+i = 0
 workers = {}
+for (
+    worker
+) in db.get_workers():  # name, status, port, host, token, hostname, state_hostname
+    try:
+        workers[worker[1]] = {
+            "acs_hostname": worker[6],
+            "ip": worker[4],
+            "port": worker[3],
+        }
+
+        data = json.dumps(
+            {
+                "token": worker[4],
+                "hostname": worker[5],
+                "manager_token": ManagerJson.get("token", None),
+                "manager_hostname": socket.gethostname(),
+            }
+        ).encode("utf-8")
+
+        req = request.Request(
+            f"http://{worker[4]}:{worker[3]}/connect/{worker[1]}",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        main_resp = request.urlopen(req)
+        main_body = json.loads(main_resp.read().decode("utf-8"))
+
+        i += 1
+        print(f"Worker {worker[1]} connected [{i}/{len(db.get_workers())}]")
+    except urllib.error.URLError as e:
+        print(
+            f"Failed to connect worker {worker[1]}: {e} [{i}/{len(db.get_workers())}]"
+        )
 
 
 class ConnectRequest(BaseModel):
@@ -26,7 +73,7 @@ class ExecuteConnectRequest(BaseModel):
     token: str
     remember: bool = True
     port: str = "8000"
-    ip: str
+    host: str
     manager_token: str
     language: str
     code: str
@@ -42,12 +89,12 @@ class LoadRequest(BaseModel):
 DATA_DIR = files("data")
 
 
-def ImportJsonData(path: str = "manager.json") -> dict:
-    with open(file=DATA_DIR / path, mode="r") as file:
-        return json.load(file)
+# def ImportJsonData(path: str = "manager.json") -> dict:
+#     with open(file=DATA_DIR / path, mode="r") as file:
+#         return json.load(file)
 
 
-ManagerJson = ImportJsonData()
+# ManagerJson = ImportJsonData()
 
 
 class Manager:
@@ -100,19 +147,33 @@ def load(worker_id: str, body: LoadRequest):
 
 @app.post("/connect/{worker_id}")
 def connect(worker_id: str, body: ConnectRequest):
-    if body.manager_token == Manager.token:
-        hostname = f"acs.worker-{worker_id}.local"
+    if body.manager_token != Manager.token:
+        return {"error": "Invalid manager token"}
 
-        data = json.dumps(
-            {
-                "token": body.token,
-                "hostname": hostname,
-                "manager_token": Manager.token,
-                "manager_hostname": socket.gethostname(),
-            }
-        ).encode("utf-8")
+    hostname = f"acs.worker-{worker_id}.local"
 
-        # ip= socket.gethostbyname(hostname)
+    data = json.dumps(
+        {
+            "token": body.token,
+            "hostname": hostname,
+            "manager_token": Manager.token,
+            "manager_hostname": socket.gethostname(),
+        }
+    ).encode("utf-8")
+
+    # ip= socket.gethostbyname(hostname)
+    try:
+        req = request.Request(
+            f"http://{body.ip}:{body.port}/connect/{worker_id}",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        main_resp = request.urlopen(req)
+        main_body = json.loads(main_resp.read().decode("utf-8"))
+        sec_resp = {}
+
         try:
             req = request.Request(
                 f"http://{body.ip}:{body.port}/connect/{worker_id}",
@@ -167,9 +228,22 @@ def connect(worker_id: str, body: ConnectRequest):
             "hostname": redirect_body.get("hostname", None),
         }
 
+        try:
+            db.add_worker(
+                worker_id,
+                "connected",
+                body.port,
+                body.ip,
+                body.token,
+                redirect_body.get("hostname", None),
+                redirect_body.get("state", {}).get("hostname", None),
+            )
+        except sqlite3.IntegrityError as e:
+            pass
+
         return {"response": main_body, "redirect": redirect_body}
-    else:
-        return {"error": "Invalid Manager"}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.post("/execute/{worker_id}")
@@ -187,7 +261,7 @@ def execute(worker_id: str, body: ExecuteConnectRequest):
                 "code": body.code,
                 "return_ip": body.return_ip,
                 "return_port": body.return_port,
-                "ip": body.ip,
+                "ip": body.host,
                 "port": body.port,
             }
         ).encode("utf-8")
@@ -195,7 +269,7 @@ def execute(worker_id: str, body: ExecuteConnectRequest):
         # ip= socket.gethostbyname(hostname)
         try:
             req = request.Request(
-                f"http://{body.ip}:{body.port}/run/code/{worker_id}",
+                f"http://{body.host}:{body.port}/run/code/{worker_id}",
                 data=data,
                 headers={"Content-Type": "application/json"},
                 method="POST",
@@ -205,7 +279,7 @@ def execute(worker_id: str, body: ExecuteConnectRequest):
         except (error.HTTPError, error.URLError) as e:
             return {
                 "error": e,
-                "page": f"http://{body.ip}:{body.port}/run/code/{worker_id}",
+                "page": f"http://{body.host}:{body.port}/run/code/{worker_id}",
             }
 
 

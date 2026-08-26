@@ -1,48 +1,95 @@
-# ACS - Clustering system
+# ACS - Clustering System
+
+ACS is a Python-based clustering system that allows you to run a Manager and one or more Workers and execute code remotely.
 
 ## Requirements
 
 - Python 3.12+
 - pipx
+- Deno
 
-## How to Download?
+## Installation
 
-### 1) Make sure to download the GitHub repo:
+### Clone the repository
 
 ```bash
 git clone https://github.com/blokkaDev/cluster.git
 cd cluster
 ```
 
-## Using pipx
-
-### 1) Install ACS with pipx:
+### Install ACS with pipx
 
 ```bash
 pipx install .
 ```
 
-### 2) If pipx us not yet avaiable in your path run:
+If pipx is not yet available in your PATH, run:
 
 ```bash
 pipx ensurepath
 ```
 
-Now restart your terminal
+Then restart your terminal.
 
-You should be able to use acs in any directory
-
-Try running this command:
+You should now be able to use `acs` from any directory:
 
 ```bash
 acs --help
 ```
 
+## Configuration
+
+Before starting ACS, you need to create the environment file:
+
+```
+data/secrets/.env
+```
+
+An example configuration is provided in:
+
+```
+data/secrets/.env.example
+```
+
+Copy the example file:
+
+```bash
+cp data/secrets/.env.example data/secrets/.env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item data/secrets/.env.example data/secrets/.env
+```
+
+Then edit `data/secrets/.env` with your configuration.
+
+### Example .env
+
+```
+# Worker
+WORKER_ID=idd-2
+WORKER_TOKEN=worker-secret-token
+WORKER_HOST=0.0.0.0
+WORKER_PORT=8001
+WORKER_HOSTNAME=acs.worker-idd-2.local
+
+# Manager
+MANAGER_TOKEN=manager-secret-token
+MANAGER_HOST=0.0.0.0
+MANAGER_PORT=8000
+MANAGER_HOSTNAME=acs.manager.local
+MANAGER_REMEMBER=true
+```
+
 ## Development
 
-### 1) Create the Python `Venv`:
+If you want to work on ACS without installing it globally, create a virtual environment.
 
-Linux/MacOS:
+### Create the virtual environment
+
+Linux/macOS:
 
 ```bash
 python3 -m venv .venv
@@ -50,33 +97,35 @@ python3 -m venv .venv
 
 Windows:
 
-```bash
+```powershell
 python -m venv .venv
 ```
 
-### 2) Activate the Venv:
+### Activate the virtual environment
 
-Linux/MacOS:
+Linux/macOS:
 
 ```bash
 source .venv/bin/activate
 ```
 
-Windows:
+Windows PowerShell:
 
-```shell
+```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-### 3) Install ACS:
+### Install ACS
 
 ```bash
 pip install -e .
 ```
 
-### 4) Download Deno to use the sandbox:
+## Install Deno
 
-Linux/MacOS:
+Deno is required to use the sandbox.
+
+Linux/macOS:
 
 ```bash
 curl -fsSL https://deno.land/install.sh | sh
@@ -84,66 +133,166 @@ curl -fsSL https://deno.land/install.sh | sh
 
 Windows:
 
-```shell
+```powershell
 irm https://deno.land/install.ps1 | iex
 ```
 
-### 5) Check if Deno is installed:
+Check the installation:
 
 ```bash
 deno --version
 ```
 
-If is not installed restart your terminal
+If the command is not available, restart your terminal.
 
-## How to Run the CLI?
+## CLI Usage
 
-#### Here is a quick list of commands to try
+ACS provides a CLI through the `acs` command.
 
-### Start the manager
-
-```bash
-acs start --manager
-```
-
-### Start the worker
-
-```bash
-acs start --worker
-```
-
-### Connect the manager with the worker
-
-```bash
-acs connect
-```
-
-### Now it's time to load the worker to the manager
-
-```bash
-acs load
-```
-
-### Run a python file
-
-```bash
-acs run file_name --python
-```
-
-### Command list
+Show the available commands:
 
 ```bash
 acs --help
 ```
 
-## How to Run it whithout the CLI?
+### Start the Manager
 
-#### If you run it whithout the CLI you will enable the Development mode
+```bash
+acs start --manager
+```
 
-### Run the Development mode file in the root directory of the project
+The Manager uses the configuration defined by:
+
+- `MANAGER_HOST`
+- `MANAGER_PORT`
+- `MANAGER_TOKEN`
+- `MANAGER_HOSTNAME`
+
+### Start a Worker
+
+```bash
+acs start --worker
+```
+
+The Worker uses the configuration defined by:
+
+- `WORKER_ID`
+- `WORKER_HOST`
+- `WORKER_PORT`
+- `WORKER_TOKEN`
+- `WORKER_HOSTNAME`
+
+### Connect a Worker to the Manager
+
+The connect command requires the Manager address and authentication token:
+
+```bash
+acs connect <host> <port> <token>
+```
+
+For example:
+
+```bash
+acs connect 127.0.0.1 8000 manager-secret-token
+```
+
+The remember option can also be disabled:
+
+```bash
+acs connect 127.0.0.1 8000 manager-secret-token --no-remember
+```
+
+### Load a Worker
+
+Load a worker by specifying its ID and the Manager token:
+
+```bash
+acs load <worker_id> <token>
+```
+
+For example:
+
+```bash
+acs load idd-2 manager-secret-token
+```
+
+### Execute a Python file
+
+To execute a Python file on a Worker:
+
+```bash
+acs run file_name.py --python
+```
+
+For example:
+
+```bash
+acs run example.py --python
+```
+
+At the moment, Python is the supported language for the run command.
+
+## Typical Workflow
+
+A basic ACS workflow consists of starting the Manager, starting a Worker, connecting them, loading the Worker, and finally executing code.
+
+### Terminal 1 — Manager
+
+```bash
+acs start --manager
+```
+
+### Terminal 2 — Worker
+
+```bash
+acs start --worker
+```
+
+### Terminal 3 — Connect
+
+```bash
+acs connect <manager-host> <manager-port> <manager-token>
+```
+
+For example:
+
+```bash
+acs connect 127.0.0.1 8000 manager-secret-token
+```
+
+### Load the Worker
+
+```bash
+acs load idd-2 manager-secret-token
+```
+
+### Run code
+
+```bash
+acs run example.py --python
+```
+
+## Available Commands
+
+```bash
+acs --help
+acs connect <host> <port> <token>
+acs load <worker_id> <token>
+acs run <file> --python
+acs start --manager
+acs start --worker
+```
+
+## Running ACS Without the CLI
+
+ACS can also be run directly using Python.
+
+This mode is mainly intended for development and debugging.
+
+From the root of the project:
 
 ```bash
 python main.py
 ```
 
-##### THIS IS THE FIRST VERSION OF THE CLI SO THE COMMAND ARE NOT PERFECT
+**Note:** ACS is currently in its first CLI version. Some commands, options, and behaviours may change in future releases.

@@ -1,22 +1,22 @@
 import json
-import threading
 from importlib.resources import files
 from urllib import request
 from urllib.error import HTTPError
 
+from data.env import Env
+
+env = Env()
+
 
 class ACSClient:
     def __init__(self):
-        BASE_DIR = files("data")
+        env.get_all()
 
-        self.main = self._json(BASE_DIR / "main.json")
-        self.workers = self._json(BASE_DIR / "workers.json")
-        self.worker_id = self.main.get("worker")
-        self.worker = self.workers.get(
-            self.worker_id, self.workers.get("lastWorker", {})
-        )
+        self.manager = env.ManagerJson
+        self.worker = env.WorkerJson
 
-        self.manager = self._json(BASE_DIR / "manager.json")
+        self.worker_id = self.worker.get("id", None)
+
         self._manager_thread = None
         self._worker_thread = None
 
@@ -46,23 +46,23 @@ class ACSClient:
         port = self.manager.get("port", 8001)
         return f"http://{host}:{port}{path}"
 
-    def connect(self):
+    def connect(self, host: str, port: int, token: str, remember: bool = True):
         return self._post(
             self._manager_url(f"/connect/{self.worker_id}"),
             {
-                "token": self.worker.get("token"),
-                "remember": self.manager.get("remember", True),
+                "token": token,
+                "remember": remember,
                 "manager_token": self.manager.get("token"),
-                "ip": self.worker.get("host", "127.0.0.1"),
-                "port": str(self.worker.get("port", 8000)),
+                "ip": host,
+                "port": str(port),
             },
         )
 
-    def load(self):
+    def load(self, worker_id: str, token: str):
         return self._post(
-            self._manager_url(f"/load/{self.worker_id}"),
+            self._manager_url(f"/load/{worker_id}"),
             {
-                "token": self.worker.get("token"),
+                "token": token,
                 "manager_token": self.manager.get("token"),
             },
         )
@@ -78,7 +78,7 @@ class ACSClient:
                     "code": code,
                     "return_ip": self.manager.get("host", "127.0.0.1"),
                     "return_port": str(self.manager.get("port", 8001)),
-                    "ip": self.worker.get("host", "127.0.0.1"),
+                    "host": self.worker.get("host", "127.0.0.1"),
                     "port": str(self.worker.get("port", 8000)),
                 },
             )

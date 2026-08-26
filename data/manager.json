@@ -1,7 +1,0 @@
-{
-    "token": "abc",
-    "hostname": "acs.manager.local",
-    "remember": true,
-    "port": 8001,
-    "host": "0.0.0.0"
-}

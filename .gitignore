@@ -17,3 +17,5 @@ check/
 data/pids/*.pid
 test/
 .zed/
+data/secrets/.env
+data/secrets/workers.db

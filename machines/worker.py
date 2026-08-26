@@ -1,24 +1,33 @@
-import json
+# import json
 import socket
-from importlib.resources import files
+
+# from cmath import e
 from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+# from fastapi_cloud_cli.commands.env import env_app
 from pydantic import BaseModel
 from zeroconf import ServiceInfo, Zeroconf
 
+# from data.sqlite import Database
+from data.env import Env
 from langs import Python
+
+# from main import ManagerJson
+# from main import WorkerJson
 
 app = FastAPI()
 python = Python()
+# db = Database()
+env = Env()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 HTML_DIR = BASE_DIR / "HTML"
-DATA_DIR = BASE_DIR / "data"
 
 templates = Jinja2Templates(directory=str(HTML_DIR))
 
@@ -29,21 +38,34 @@ app.mount(
 )
 
 
-def ImportJsonData(path: str = "workers.json") -> dict:
-    with open(file=DATA_DIR / path, mode="r") as file:
-        return json.load(file)
+# I'm not using this anymore
+# def ImportJsonData(path: str = "workers.json") -> dict:
+#    with open(file=DATA_DIR / path, mode="r") as file:
+#        return json.load(file)
 
 
-WorkerID = ImportJsonData(path="main.json").get("worker", None)
-WorkerJson = ImportJsonData()
-WorkerJson = WorkerJson.get(WorkerID, WorkerJson.get("lastWorker", None))
+# WorkerID = ImportJsonData(path="main.json").get("worker", None)
+# WorkerJson = ImportJsonData()
+# WorkerJson = WorkerJson.get(WorkerID, WorkerJson.get("lastWorker", None))
 
-ManagerJson = ImportJsonData(path="manager.json")
+# ManagerJson = ImportJsonData(path="manager.json")
+
+# WorkerID = "idd-2"
+# I'm not using this too (manager only)
+# WorkerJson = db.select_worker_by_name(name=WorkerID)
+
+
+EnvData = env.get_all()
+ManagerJson = env.ManagerJson
+WorkerJson = env.WorkerJson
+
+# print("manager:", ManagerJson)
+# print("worker:", WorkerJson)
 
 
 class Worker:
     token: str = WorkerJson.get("token", None)
-    id: str = WorkerID
+    id: str = WorkerJson.get("id", None)
     port: int = WorkerJson.get("port", None)
     hostname: str = f"acs.worker-{id}.local"
     ip: str = socket.gethostbyname(socket.gethostname())
@@ -115,22 +137,45 @@ class ConnectManagerRequest(BaseModel):
 
 
 def CheckConnectionStatus(body, worker_id):
-    if Manager.connected and worker_id == Worker.id:
+    msg = "Invalid Data provided!"
+    if not Manager.connected:
+        return {"state": False, "message": "Manager not connected"}
+
+    if not worker_id:
+        return {"state": False, "message": "Invalid worker id"}
+
+    if not body.token:
+        return {"state": False, "message": "Invalid token"}
+
+    if not body.manager_token:
+        return {"state": False, "message": "Invalid manager token"}
+
+    if not body.manager_hostname:
+        return {"state": False, "message": "Invalid manager hostname"}
+
+    if worker_id == Worker.id:
         if body.token == Worker.token and body.manager_token == Manager.token:
             if body.manager_hostname == Manager.hostname:
-                return True
-    return False
+                return {"state": True, "message": "Connected successfully"}
+            else:
+                msg = f"Invalid manager hostname: {body.manager_hostname}"
+        else:
+            msg = "Invalid token"
+    else:
+        msg = f"Invalid worker id: {worker_id}"
+    return {"state": False, "message": msg}
 
 
 @app.post("/set/hostname/{worker_id}/{new_hostname}")
 def set_hostname(worker_id: str, new_hostname: str, body: ConnectManagerRequest):
-    if CheckConnectionStatus(body, worker_id):
+    state = CheckConnectionStatus(body, worker_id)
+    if state["state"]:
         Worker.hostname = new_hostname
         state = UpdateWorkerHostname()
 
         return {"hostname": socket.gethostname(), "state": state}
     else:
-        return {"error": "Invalid Data provided!"}
+        return {"error": state["message"]}
 
 
 @app.post("/get/hostname")
@@ -167,12 +212,12 @@ def load_worker(worker_id: str, body: ConnectManagerRequest):
 
 @app.post("/run/code/{worker_id}")
 async def execute_code(worker_id: str, body: CodeRunnerRequest, request: Request):
-    if CheckConnectionStatus(body, worker_id):
+    state = CheckConnectionStatus(body, worker_id)
+    if state["state"]:
         # the worker will send the result to a specified machine
         requester_ip = request.client.host
         return_ip = body.return_ip
         return_port = body.return_port
-
         result = await python.execute(body.code)
 
         if result.status == "success":
@@ -191,7 +236,7 @@ async def execute_code(worker_id: str, body: CodeRunnerRequest, request: Request
 
         # return {"requester_ip": requester_ip, "return": {"ip": return_ip, "port": return_port}} I'm gonna add this when I'll add the task chains
     else:
-        return {"error": "Invalid Data provided!", "recived": body}
+        return {"error": state["message"]}
 
 
 @app.post("/connect/{worker_id}")

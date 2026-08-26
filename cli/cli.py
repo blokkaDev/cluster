@@ -9,13 +9,13 @@ client = ACSClient()
 
 
 @app.command()
-def connect():
-    typer.echo(client.connect())
+def connect(host: str, port: int, token: str, remember: bool = True):
+    typer.echo(client.connect(host, port, token, remember))
 
 
 @app.command()
-def load():
-    typer.echo(client.load())
+def load(worker_id: str, token: str):
+    typer.echo(client.load(worker_id, token))
 
 
 @app.command()
