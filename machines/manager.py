@@ -18,7 +18,7 @@ class ConnectRequest(BaseModel):
     token: str
     remember: bool = True
     port: str = "8000"
-    ip: str = "127.0.0.1"
+    ip: str
     manager_token: str
 
 
@@ -26,7 +26,7 @@ class ExecuteConnectRequest(BaseModel):
     token: str
     remember: bool = True
     port: str = "8000"
-    ip: str = "127.0.0.1"
+    ip: str
     manager_token: str
     language: str
     code: str
@@ -143,13 +143,13 @@ def connect(worker_id: str, body: ConnectRequest):
                     )
 
                     sec_resp = request.urlopen(req)
-                except error.HTTPError as e:
+                except (error.HTTPError, error.URLError) as e:
                     sec_resp = {
                         "error": e,
                         "page": f"http://{redirect.get('ip', '127.0.0.1')}:{redirect.get('port', '8000')}{redirect.get('page', '/')}",
                     }
 
-        except error.HTTPError as e:
+        except (error.HTTPError, error.URLError) as e:
             return {
                 "error": e,
                 "page": f"http://{body.ip}:{body.port}/connect/{worker_id}",
@@ -187,6 +187,8 @@ def execute(worker_id: str, body: ExecuteConnectRequest):
                 "code": body.code,
                 "return_ip": body.return_ip,
                 "return_port": body.return_port,
+                "ip": body.ip,
+                "port": body.port,
             }
         ).encode("utf-8")
 
@@ -200,7 +202,7 @@ def execute(worker_id: str, body: ExecuteConnectRequest):
             )
 
             return json.loads(request.urlopen(req).read().decode("utf-8"))
-        except error.HTTPError as e:
+        except (error.HTTPError, error.URLError) as e:
             return {
                 "error": e,
                 "page": f"http://{body.ip}:{body.port}/run/code/{worker_id}",
