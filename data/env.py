@@ -8,6 +8,11 @@ class Env:
         self.path = Path(__file__).resolve().parent / "secrets" / ".env"
         self.env = dict(dotenv.dotenv_values(self.path))
 
+        if not self.path.exists():
+            print(
+                f"Warning: {self.path} does not exist, make sure to read: https://github.com/blokkaDev/cluster/blob/main/README.md"
+            )
+
         self.WorkerJson = {}
         self.ManagerJson = {}
 

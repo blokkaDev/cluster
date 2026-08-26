@@ -14,6 +14,7 @@ dependencies = [
 	"zeroconf",
 	"langchain_sandbox",
 	"typer",
+	"python-dotenv"
 ]
 
 [project.scripts]
