@@ -109,10 +109,10 @@ class ACSClient:
             if self._manager_thread and self._manager_thread.is_alive():
                 return {"state": True, "node": "manager", "status": "already_running"}
 
-            self._manager_thread = threading.Thread(
-                target=self._run_manager, daemon=True
+            print(
+                f"Starting Manager... on: http://{self.manager.get('host', '0.0.0.0')}:{self.manager.get('port', '8001')}"
             )
-            self._manager_thread.start()
+            self._run_manager()
 
             return {
                 "state": True,
@@ -125,8 +125,10 @@ class ACSClient:
             if self._worker_thread and self._worker_thread.is_alive():
                 return {"state": True, "node": "worker", "status": "already_running"}
 
-            self._worker_thread = threading.Thread(target=self._run_worker, daemon=True)
-            self._worker_thread.start()
+            print(
+                f"Starting Worker... on: http://{self.worker.get('host', '0.0.0.0')}:{self.worker.get('port', '8001')}"
+            )
+            self._run_worker()
 
             return {
                 "state": True,
