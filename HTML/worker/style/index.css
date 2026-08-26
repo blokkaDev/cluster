@@ -1,0 +1,15 @@
+body {
+    padding: 0;
+    background-color: #030205;
+    color: white;
+    font-family: Arial;
+    margin: 0;
+}
+
+.flex {
+    display: flex;
+}
+
+.title .worker-id {
+    margin-left: 10px;
+}

@@ -1,9 +1,12 @@
 import json
 import socket
 from importlib.resources import files
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from zeroconf import ServiceInfo, Zeroconf
 
@@ -12,7 +15,18 @@ from langs import Python
 app = FastAPI()
 python = Python()
 
-DATA_DIR = files("data")
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+HTML_DIR = BASE_DIR / "HTML"
+DATA_DIR = BASE_DIR / "data"
+
+templates = Jinja2Templates(directory=str(HTML_DIR))
+
+app.mount(
+    "/static",
+    StaticFiles(directory=str(HTML_DIR / "worker")),
+    name="static",
+)
 
 
 def ImportJsonData(path: str = "workers.json") -> dict:
@@ -123,6 +137,25 @@ def set_hostname(worker_id: str, new_hostname: str, body: ConnectManagerRequest)
 def get_hostname(body: ConnectRequest):
     if body.token == Worker.token:
         return {"hostname": socket.gethostname()}
+    else:
+        return {"error": "Invalid token"}
+
+
+@app.get("/")
+async def home(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="worker/index.html",
+        context={
+            "worker_id": Worker.id,
+        },
+    )
+
+
+@app.post("/get/id")
+def get_id(body: ConnectRequest):
+    if body.token == Worker.token:
+        return {"id": Worker.id}
     else:
         return {"error": "Invalid token"}
 

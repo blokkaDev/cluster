@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "acs"
-version = "0.4.4"
+version = "0.4.6"
 description = "Lightweight distributed computing system"
 requires-python = ">=3.11"
 dependencies = [
@@ -25,7 +25,8 @@ include = [
     "machines*",
     "langs*",
     "cli*",
-    "data*"
+    "data*",
+    "HTML*"
 ]
 exclude = ["node_modules*"]
 
