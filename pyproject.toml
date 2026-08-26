@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "acs"
-version = "0.5.1"
+version = "0.5.3"
 description = "Lightweight distributed computing system"
 requires-python = ">=3.11"
 dependencies = [
@@ -14,7 +14,8 @@ dependencies = [
 	"zeroconf",
 	"langchain_sandbox",
 	"typer",
-	"python-dotenv"
+	"python-dotenv",
+	"jinja2"
 ]
 
 [project.scripts]
