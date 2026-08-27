@@ -63,12 +63,22 @@ WorkerJson = env.WorkerJson
 # print("worker:", WorkerJson)
 
 
+def _resolve_local_ip() -> str:
+    """Resolve the local machine IP, falling back to loopback if the
+    hostname cannot be resolved (e.g. unusual DNS setups on FreeBSD/some
+    containers)."""
+    try:
+        return socket.gethostbyname(socket.gethostname())
+    except OSError:
+        return "127.0.0.1"
+
+
 class Worker:
     token: str = WorkerJson.get("token", None)
     id: str = WorkerJson.get("id", None)
     port: int = WorkerJson.get("port", None)
     hostname: str = f"acs.worker-{id}.local"
-    ip: str = socket.gethostbyname(socket.gethostname())
+    ip: str = _resolve_local_ip()
     info: ServiceInfo | None = None
 
     record: bool = False
@@ -90,7 +100,7 @@ def UpdateWorkerHostname() -> dict:
     info = ServiceInfo(
         service_name,
         f"acs-worker-{Worker.id}._http._tcp.local.",
-        addresses=[socket.inet_aton(socket.gethostbyname(socket.gethostname()))],
+        addresses=[socket.inet_aton(_resolve_local_ip())],
         port=Worker.port,
         server=hostname,
     )
