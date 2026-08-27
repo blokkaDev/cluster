@@ -187,19 +187,19 @@ The Worker uses the configuration defined by:
 The connect command requires the Manager address and authentication token:
 
 ```bash
-acs connect <host> <port> <token>
+acs connect <host> <port> <token> <worker_id>
 ```
 
 For example:
 
 ```bash
-acs connect 127.0.0.1 8000 manager-secret-token
+acs connect 127.0.0.1 8000 manager-secret-token idd-2
 ```
 
 The remember option can also be disabled:
 
 ```bash
-acs connect 127.0.0.1 8000 manager-secret-token --no-remember
+acs connect 127.0.0.1 8000 manager-secret-token idd-2 --no-remember
 ```
 
 ### Load a Worker
@@ -221,13 +221,13 @@ acs load idd-2 manager-secret-token
 To execute a Python file on a Worker:
 
 ```bash
-acs run file_name.py --python
+acs run <worker_id> file_name.py --python
 ```
 
 For example:
 
 ```bash
-acs run example.py --python
+acs run idd-2 example.py --python
 ```
 
 At the moment, Python is the supported language for the run command.
@@ -251,13 +251,13 @@ acs start --worker
 ### Terminal 3 — Connect
 
 ```bash
-acs connect <manager-host> <manager-port> <manager-token>
+acs connect <worker-host> <worker-port> <worker-token> <worker-id>
 ```
 
 For example:
 
 ```bash
-acs connect 127.0.0.1 8000 manager-secret-token
+acs connect 127.0.0.1 8000 worker-secret-token idd-2
 ```
 
 ### Load the Worker
@@ -269,18 +269,19 @@ acs load idd-2 manager-secret-token
 ### Run code
 
 ```bash
-acs run example.py --python
+acs run idd-2 example.py --python
 ```
 
 ## Available Commands
 
 ```bash
 acs --help
-acs connect <host> <port> <token>
+acs connect <host> <port> <token> <worker_id>
 acs load <worker_id> <token>
-acs run <file> --python
+acs run <worker_id> <file> --python
 acs start --manager
 acs start --worker
+acs list
 ```
 
 ## Running ACS Without the CLI
