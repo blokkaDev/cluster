@@ -1,11 +1,13 @@
 import json
-from importlib.resources import files
+import socket
 from urllib import request
 from urllib.error import HTTPError
 
 from data.env import Env
+from data.sqlite import Database
 
 env = Env()
+db = Database()
 
 
 class ACSClient:
@@ -13,9 +15,39 @@ class ACSClient:
         env.get_all()
 
         self.manager = env.ManagerJson
-        self.worker = env.WorkerJson
 
-        self.worker_id = self.worker.get("id", None)
+        i = 0
+        self.workers = {}
+        for worker in db.get_workers():
+            try:
+                self.workers[worker[1]] = {
+                    "acs_hostname": worker[6],
+                    "host": worker[4],
+                    "port": worker[3],
+                    "token": worker[5],
+                }
+
+                data = json.dumps(
+                    {
+                        "token": worker[4],
+                        "hostname": worker[5],
+                        "manager_token": self.manager.get("token", None),
+                        "manager_hostname": socket.gethostname(),
+                    }
+                ).encode("utf-8")
+
+                request.Request(
+                    f"http://{worker[4]}:{worker[3]}/connect/{worker[1]}",
+                    data=data,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+
+                i += 1
+            except urllib.error.URLError as e:
+                pass
+
+        print(self.workers)
 
         self._manager_thread = None
         self._worker_thread = None
@@ -46,9 +78,14 @@ class ACSClient:
         port = self.manager.get("port", 8001)
         return f"http://{host}:{port}{path}"
 
-    def connect(self, host: str, port: int, token: str, remember: bool = True):
+    def list(self):
+        return self.workers
+
+    def connect(
+        self, host: str, port: int, token: str, name: str, remember: bool = True
+    ):
         return self._post(
-            self._manager_url(f"/connect/{self.worker_id}"),
+            self._manager_url(f"/connect/{name}"),
             {
                 "token": token,
                 "remember": remember,
@@ -67,19 +104,19 @@ class ACSClient:
             },
         )
 
-    def execute(self, code, language="python"):
+    def execute(self, code, worker_id, language="python"):
         try:
             return self._post(
-                self._manager_url(f"/execute/{self.worker_id}"),
+                self._manager_url(f"/execute/{worker_id}"),
                 {
-                    "token": self.worker.get("token"),
+                    "token": str(self.workers[worker_id].get("token")),
                     "manager_token": self.manager.get("token"),
                     "language": language,
                     "code": code,
                     "return_ip": self.manager.get("host", "127.0.0.1"),
                     "return_port": str(self.manager.get("port", 8001)),
-                    "host": self.worker.get("host", "127.0.0.1"),
-                    "port": str(self.worker.get("port", 8000)),
+                    "host": self.workers[worker_id].get("host", "0.0.0.0"),
+                    "port": str(self.workers[worker_id].get("port", 8000)),
                 },
             )
         except Exception as e:

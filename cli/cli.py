@@ -9,8 +9,13 @@ client = ACSClient()
 
 
 @app.command()
-def connect(host: str, port: int, token: str, remember: bool = True):
-    typer.echo(client.connect(host, port, token, remember))
+def connect(host: str, port: int, token: str, name: str, remember: bool = True):
+    typer.echo(client.connect(host, port, token, name, remember))
+
+
+@app.command()
+def list():
+    typer.echo(client.list())
 
 
 @app.command()
@@ -20,6 +25,7 @@ def load(worker_id: str, token: str):
 
 @app.command()
 def run(
+    worker_id: str,
     file: Path = typer.Argument(..., exists=True, readable=True, dir_okay=False),
     python: bool = typer.Option(False, "--python"),
 ):
@@ -27,7 +33,7 @@ def run(
         typer.echo("Specify a language with --python", err=True)
         raise typer.Exit(1)
 
-    typer.echo(client.execute(file.read_text(), "python"))
+    typer.echo(client.execute(file.read_text(), worker_id, "python"))
 
 
 @app.command()

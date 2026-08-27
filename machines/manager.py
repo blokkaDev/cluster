@@ -145,6 +145,11 @@ def load(worker_id: str, body: LoadRequest):
         }
 
 
+@app.post("/list")
+def list():
+    return workers
+
+
 @app.post("/connect/{worker_id}")
 def connect(worker_id: str, body: ConnectRequest):
     if body.manager_token != Manager.token:
