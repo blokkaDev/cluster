@@ -15,7 +15,22 @@ def connect(host: str, port: int, token: str, name: str, remember: bool = True):
 
 @app.command()
 def list():
-    typer.echo(client.list())
+    workers=client.list()
+    if len(workers)==0:
+        typer.echo("No workers connected.")
+        return
+    typer.echo("ID\t    HOST\t  PORT\t  STATUS\t    LAST SEEN\t HOSTNAME")
+    typer.echo("-"*60)
+
+    for worker_id,info in workers.items():
+        host=info.get("host","Not found")
+        port=str(info.get("port","Not found"))
+        hostname=info.get("acs_hostname","Not found" )
+        status=str(info.get("status","ONLINE")).upper()
+        if status== "OFFLINE":
+            status="! OFFLINE !"
+        last_seen=info.get("last_seen", "Not found")
+        typer.echo(f"{worker_id}\t  {host}\t    {port}\t    {status}\t  {last_seen}\t   {hostname}")
 
 
 @app.command()
