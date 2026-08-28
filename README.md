@@ -1,6 +1,6 @@
 # ACS - Clustering System
 
-ACS is a Python-based clustering system that allows you to run a Manager and one or more Workers and execute code remotely.
+Turn multiple computers into a compute cluster and execute code remotely inside isolated sandboxes.
 
 ## Requirements
 
