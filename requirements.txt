@@ -6,3 +6,4 @@ langchain_sandbox
 typer
 python-dotenv
 jinja2
+pytest
