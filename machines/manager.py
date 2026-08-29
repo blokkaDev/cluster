@@ -168,17 +168,6 @@ def connect(worker_id: str, body: ConnectRequest):
 
     # ip= socket.gethostbyname(hostname)
     try:
-        req = request.Request(
-            f"http://{body.ip}:{body.port}/connect/{worker_id}",
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-
-        main_resp = request.urlopen(req)
-        main_body = json.loads(main_resp.read().decode("utf-8"))
-        sec_resp = {}
-
         try:
             req = request.Request(
                 f"http://{body.ip}:{body.port}/connect/{worker_id}",
