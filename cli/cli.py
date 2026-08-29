@@ -1,16 +1,47 @@
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as get_installed_version
 from pathlib import Path
 
 import typer
 
-from .client import ACSClient
 from .output import error, success, warning
 
 app = typer.Typer(name="acs", no_args_is_help=True)
-client = ACSClient()
+
+
+def get_client():
+    from .client import ACSClient
+    
+    return ACSClient()
+
+
+def _version_callback(value: bool):
+    if not value:
+        return
+    try:
+        installed_version = get_installed_version("acs")
+    except PackageNotFoundError:
+        installed_version = "unknown"
+    typer.echo(f"ACS {installed_version}")
+    raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the ACS version and exit.",
+    ),
+):
+    pass
 
 
 @app.command()
 def connect(host: str, port: int, token: str, name: str, remember: bool = True):
+    client = get_client()
     result = client.connect(host, port, token, name, remember)
     if isinstance(result, dict) and result.get("error"):
         error(f"Unable to connect to Manager: {result['error']}")
@@ -21,6 +52,7 @@ def connect(host: str, port: int, token: str, name: str, remember: bool = True):
 
 @app.command()
 def list():
+    client = get_client()
     workers=client.list()
     if len(workers)==0:
         warning("No workers connected.")
@@ -43,6 +75,7 @@ def list():
 
 @app.command()
 def load(worker_id: str, token: str):
+    client = get_client()
     result = client.load(worker_id, token)
     if isinstance(result, dict) and result.get("error"):
         error(f"Unable to load worker: {result['error']}")
@@ -60,7 +93,8 @@ def run(
     if not python:
         error("Specify a language with --python")
         raise typer.Exit(1)
-    
+
+    client = get_client()
     result = client.execute(file.read_text(), worker_id, "python")
     if isinstance(result, dict) and result.get("error"):
         error(f"Execution failed: {result['error']}")
@@ -73,6 +107,7 @@ def run(
 def start(
     manager: bool = typer.Option(None, "--manager/--worker"),
 ):
+    client = get_client()
     result = client.start(manager=manager)
     if isinstance(result, dict) and result.get("error"):
         error(str(result["error"]))
