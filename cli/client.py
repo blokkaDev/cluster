@@ -2,7 +2,7 @@ import json
 import socket
 from urllib import request
 from urllib.error import HTTPError
-
+from .output import error
 from data.env import Env
 from data.sqlite import Database
 
@@ -69,8 +69,7 @@ class ACSClient:
                 return json.loads(response.read().decode())
         except HTTPError as e:
             body = e.read().decode()
-            print(f"HTTP ERROR: {e.code}")
-            print(f"RESPONSE: {body}")
+            error(f"HTTP {e.code}: {body}")
             raise
 
     def _manager_url(self, path):
@@ -120,7 +119,7 @@ class ACSClient:
                 },
             )
         except Exception as e:
-            print(e)
+            error(str(e))
             return {
                 "error": e,
             }
