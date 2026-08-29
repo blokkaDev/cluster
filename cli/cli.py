@@ -77,6 +77,12 @@ def start(
     if isinstance(result, dict) and result.get("error"):
         error(str(result["error"]))
         raise typer.Exit(1)
+
+    node = str(result.get("node", "node")).capitalize()
+    if result.get("status") == "already_running":
+        success(f"{node} already running")
+    else:
+        success(f"{node} started")
     typer.echo(result)
 
 

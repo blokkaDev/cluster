@@ -56,7 +56,7 @@ class ACSClient:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
 
-    def _post(self, url, data):
+    def _post(self, url, data, report_errors: bool = True):
         req = request.Request(
             url,
             data=json.dumps(data).encode(),
@@ -69,7 +69,8 @@ class ACSClient:
                 return json.loads(response.read().decode())
         except HTTPError as e:
             body = e.read().decode()
-            error(f"HTTP {e.code}: {body}")
+            if report_errors:
+                error(f"HTTP {e.code}: {body}")
             raise
 
     def _manager_url(self, path):
@@ -117,6 +118,7 @@ class ACSClient:
                     "host": self.workers[worker_id].get("host", "0.0.0.0"),
                     "port": str(self.workers[worker_id].get("port", 8000)),
                 },
+                report_errors=False,
             )
         except Exception as e:
             error(str(e))
