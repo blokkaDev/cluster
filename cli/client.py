@@ -1,7 +1,7 @@
 import json
 import socket
 from urllib import request
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from .output import error
 from data.env import Env
 from data.sqlite import Database
@@ -72,6 +72,15 @@ class ACSClient:
             if report_errors:
                 error(f"HTTP {e.code}: {body}")
             raise
+        except URLError as e:
+            return {
+                "error": (
+                    "The Manager may not be running or the configured host/port "
+                    "may be incorrect. Check: Manager host, Manager port, "
+                    "network connectivity, Manager status."
+                ),
+                "debug": str(e.reason),
+            }
 
     def _manager_url(self, path):
         host = self.manager.get("host", "127.0.0.1")
