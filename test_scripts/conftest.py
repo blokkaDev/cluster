@@ -20,8 +20,8 @@ class FakeClient:
         self.calls.append(("connect", host, port, token, name, remember))
         return self.connect_result
 
-    def list(self):
-        self.calls.append(("list",))
+    def list(self, refresh=False):
+        self.calls.append(("list", refresh))
         return self.list_result
 
     def load(self, worker_id, token):
