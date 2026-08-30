@@ -24,6 +24,7 @@ app = FastAPI()
 python = Python()
 # db = Database()
 env = Env()
+env.validate_worker()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

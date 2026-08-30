@@ -19,6 +19,7 @@ zeroconf = Zeroconf()
 env = Env()
 db = Database()
 
+env.validate_manager()
 env.get_all()
 ManagerJson = env.ManagerJson
 
