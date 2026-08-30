@@ -6,12 +6,12 @@ The following versions are currently supported with security updates:
 
 | Version | Supported          |
 | ------- | ------------------ |
+| 0.6.0   | :white_check_mark: |
 | 0.5.9   | :white_check_mark: |
 | 0.5.8   | :white_check_mark: |
-| 0.5.7   | :white_check_mark: |
+| 0.5.7   | :warning:          |
 | 0.5.6   | :warning:          |
-| 0.5.5   | :warning:          |
-| < 5.5   | :x:                |
+| < 5.6   | :x:                |
 
 ## Reporting a Vulnerability
 

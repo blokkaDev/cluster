@@ -1,3 +1,4 @@
+from datetime import datetime
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as get_installed_version
 from pathlib import Path
@@ -11,7 +12,7 @@ app = typer.Typer(name="acs", no_args_is_help=True)
 
 def get_client():
     from .client import ACSClient
-    
+
     return ACSClient()
 
 
@@ -51,26 +52,51 @@ def connect(host: str, port: int, token: str, name: str, remember: bool = True):
 
 
 @app.command()
-def list():
+def list(refresh: bool = False):
     client = get_client()
-    workers=client.list()
-    if len(workers)==0:
+    workers = client.list(refresh=refresh)
+    if len(workers) == 0:
         warning("No workers connected.")
         return
     typer.echo("ID\t    HOST\t  PORT\t  STATUS\t    LAST SEEN\t HOSTNAME")
-    typer.echo("-"*60)
+    typer.echo("-" * 60)
 
-    for worker_id,info in workers.items():
-        host=info.get("host","Not found")
-        port=str(info.get("port","Not found"))
-        hostname=info.get("acs_hostname","Not found" )
-        status=str(info.get("status","ONLINE")).upper()
-        if status== "OFFLINE":
-            status=typer.style("! OFFLINE !", fg=typer.colors.RED)
-        else:
-            status=typer.style(status, fg=typer.colors.GREEN)
-        last_seen=info.get("last_seen", "Not found")
-        typer.echo(f"{worker_id}\t  {host}\t    {port}\t    {status}\t  {last_seen}\t   {hostname}")
+    for worker_id, info in workers.items():
+        host = info.get("host", "Not found")
+        port = str(info.get("port", "Not found"))
+        hostname = info.get("acs_hostname", "Not found")
+        status = str(info.get("status", "ONLINE")).upper()
+        if status == "OFFLINE":
+            status = "! OFFLINE !"
+        last_seen = info.get("last_seen", None)
+        if last_seen is not None:
+            last_seen_dt = datetime.fromtimestamp(last_seen)
+            now = datetime.now()
+            delta = now - last_seen_dt
+            seconds = delta.total_seconds()
+
+            if seconds < 60:
+                last_seen_str = "Now"
+            elif seconds < 3600:
+                minutes = int(seconds / 60)
+                last_seen_str = f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+            elif seconds < 86400:
+                hours = int(seconds / 3600)
+                last_seen_str = f"{hours} hour{'s' if hours > 1 else ''} ago"
+            elif seconds < 604800:
+                days = int(seconds / 86400)
+                last_seen_str = f"{days} day{'s' if days > 1 else ''} ago"
+            elif seconds < 2592000:
+                weeks = int(seconds / 604800)
+                last_seen_str = f"{weeks} week{'s' if weeks > 1 else ''} ago"
+            elif seconds < 31536000:
+                months = int(seconds / 2592000)
+                last_seen_str = f"{months} month{'s' if months > 1 else ''} ago"
+            else:
+                last_seen_str = "Never"
+        typer.echo(
+            f"{worker_id}\t  {host}\t    {port}\t    {status}\t  {last_seen_str}\t   {hostname}"
+        )
 
 
 @app.command()

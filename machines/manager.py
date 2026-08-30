@@ -2,6 +2,7 @@
 import json
 import socket
 import sqlite3
+import time
 import urllib
 from importlib.resources import files
 from urllib import error, request
@@ -33,7 +34,10 @@ for (
             "acs_hostname": worker[6],
             "ip": worker[4],
             "port": worker[3],
+            "last_seen": worker[8],
         }
+
+        print(workers[worker[1]])
 
         data = json.dumps(
             {
@@ -50,6 +54,8 @@ for (
             headers={"Content-Type": "application/json"},
             method="POST",
         )
+
+        db.update_worker_status(worker[0], "ONLINE", worker[5], worker[6], time.time())
 
         main_resp = request.urlopen(req)
         main_body = json.loads(main_resp.read().decode("utf-8"))
@@ -232,6 +238,7 @@ def connect(worker_id: str, body: ConnectRequest):
                 body.token,
                 redirect_body.get("hostname", None),
                 redirect_body.get("state", {}).get("hostname", None),
+                time.time(),
             )
         except sqlite3.IntegrityError as e:
             pass

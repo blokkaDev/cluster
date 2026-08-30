@@ -2,9 +2,11 @@ import json
 import socket
 from urllib import request
 from urllib.error import HTTPError, URLError
-from .output import error
+
 from data.env import Env
 from data.sqlite import Database
+
+from .output import error
 
 env = Env()
 db = Database()
@@ -12,42 +14,7 @@ db = Database()
 
 class ACSClient:
     def __init__(self):
-        env.get_all()
-
-        self.manager = env.ManagerJson
-
-        i = 0
-        self.workers = {}
-        for worker in db.get_workers():
-            try:
-                self.workers[worker[1]] = {
-                    "acs_hostname": worker[6],
-                    "host": worker[4],
-                    "port": worker[3],
-                    "token": worker[5],
-                }
-
-                data = json.dumps(
-                    {
-                        "token": worker[4],
-                        "hostname": worker[5],
-                        "manager_token": self.manager.get("token", None),
-                        "manager_hostname": socket.gethostname(),
-                    }
-                ).encode("utf-8")
-
-                request.Request(
-                    f"http://{worker[4]}:{worker[3]}/connect/{worker[1]}",
-                    data=data,
-                    headers={"Content-Type": "application/json"},
-                    method="POST",
-                )
-
-                i += 1
-            except urllib.error.URLError as e:
-                pass
-
-        print(self.workers)
+        self.list(refresh=True)
 
         self._manager_thread = None
         self._worker_thread = None
@@ -87,7 +54,30 @@ class ACSClient:
         port = self.manager.get("port", 8001)
         return f"http://{host}:{port}{path}"
 
-    def list(self):
+    def _refresh_workers(self):
+        self.workers = {}
+        for worker in db.get_workers():
+            try:
+                self.workers[worker[1]] = {
+                    "acs_hostname": worker[6],
+                    "host": worker[4],
+                    "port": worker[3],
+                    "token": worker[5],
+                    "last_seen": worker[8],
+                    "status": worker[2],
+                }
+            except urllib.error.URLError as e:
+                pass
+        return self.workers
+
+    def list(self, refresh: bool = False):
+        env.get_all()
+
+        self.manager = env.ManagerJson
+        self.worker = env.WorkerJson
+
+        if refresh:
+            self._refresh_workers()
         return self.workers
 
     def connect(
